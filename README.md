@@ -27,7 +27,7 @@ A powerful and intuitive file comparison tool that displays side-by-side differe
 
 1. Clone this repository:
 ```bash
-git clone https://github.com/swarna/MyFileDiff.git
+git clone https://github.com/swarnangsu/MyFileDiff.git
 cd MyFileDiff
 ```
 

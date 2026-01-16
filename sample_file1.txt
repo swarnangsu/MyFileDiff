@@ -1,0 +1,6 @@
+Line 1: This is the first line
+Line 2: This line is identical in both files
+Line 3: This line will be different
+Line 4: Another identical line
+Line 5: This line only exists in file1
+Line 6: Final line in file1

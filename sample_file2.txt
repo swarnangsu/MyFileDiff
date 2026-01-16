@@ -1,0 +1,6 @@
+Line 1: This is the first line
+Line 2: This line is identical in both files
+Line 3: This line has been modified
+Line 4: Another identical line
+Line 6: Final line in file2
+Line 7: This is a new line added to file2

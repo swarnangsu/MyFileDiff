@@ -3,7 +3,7 @@
 import sys
 import difflib
 import tkinter as tk
-from tkinter import ttk, scrolledtext, messagebox
+from tkinter import ttk, scrolledtext, messagebox, filedialog
 from pathlib import Path
 from typing import List, Tuple, Optional
 
@@ -11,18 +11,18 @@ from typing import List, Tuple, Optional
 class FileDiffGUI:
     """GUI for displaying file differences."""
 
-    def __init__(self, file1_path: str, file2_path: str):
+    def __init__(self, file1_path: Optional[str] = None, file2_path: Optional[str] = None):
         """Initialize the GUI diff viewer.
 
         Args:
-            file1_path: Path to the first file
-            file2_path: Path to the second file
+            file1_path: Path to the first file (optional)
+            file2_path: Path to the second file (optional)
         """
-        self.file1_path = Path(file1_path)
-        self.file2_path = Path(file2_path)
+        self.file1_path = Path(file1_path) if file1_path else None
+        self.file2_path = Path(file2_path) if file2_path else None
         self.root = tk.Tk()
         self.root.title("MyFileDiff - File Comparison Tool")
-        self.root.geometry("1200x700")
+        self.root.geometry("1200x750")
 
         # Color scheme for different line types
         self.colors = {
@@ -45,26 +45,57 @@ class FileDiffGUI:
         self.root.rowconfigure(0, weight=1)
         main_frame.columnconfigure(0, weight=1)
         main_frame.columnconfigure(1, weight=1)
-        main_frame.rowconfigure(1, weight=1)
+        main_frame.rowconfigure(2, weight=1)
+
+        # File selection controls
+        control_frame = ttk.Frame(main_frame, padding="5")
+        control_frame.grid(row=0, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(0, 10))
+
+        # Left file selection
+        ttk.Label(control_frame, text="File 1:", font=('Arial', 9)).grid(row=0, column=0, sticky=tk.W, padx=(0, 5))
+        self.file1_entry = ttk.Entry(control_frame, width=50)
+        self.file1_entry.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(0, 5))
+        if self.file1_path:
+            self.file1_entry.insert(0, str(self.file1_path))
+
+        self.file1_button = ttk.Button(control_frame, text="Browse...", command=self.browse_file1)
+        self.file1_button.grid(row=0, column=2, padx=(0, 20))
+
+        # Right file selection
+        ttk.Label(control_frame, text="File 2:", font=('Arial', 9)).grid(row=0, column=3, sticky=tk.W, padx=(0, 5))
+        self.file2_entry = ttk.Entry(control_frame, width=50)
+        self.file2_entry.grid(row=0, column=4, sticky=(tk.W, tk.E), padx=(0, 5))
+        if self.file2_path:
+            self.file2_entry.insert(0, str(self.file2_path))
+
+        self.file2_button = ttk.Button(control_frame, text="Browse...", command=self.browse_file2)
+        self.file2_button.grid(row=0, column=5, padx=(0, 20))
+
+        # Compare button
+        self.compare_button = ttk.Button(control_frame, text="Compare Files", command=self.compare_files, style='Accent.TButton')
+        self.compare_button.grid(row=0, column=6, padx=(0, 5))
+
+        control_frame.columnconfigure(1, weight=1)
+        control_frame.columnconfigure(4, weight=1)
 
         # Headers for each file
-        left_header = ttk.Label(
+        self.left_header = ttk.Label(
             main_frame,
-            text=str(self.file1_path),
+            text=str(self.file1_path) if self.file1_path else "No file selected",
             font=('Courier', 10, 'bold'),
             background='#E3F2FD',
             padding=5
         )
-        left_header.grid(row=0, column=0, sticky=(tk.W, tk.E), padx=(0, 5), pady=(0, 5))
+        self.left_header.grid(row=1, column=0, sticky=(tk.W, tk.E), padx=(0, 5), pady=(0, 5))
 
-        right_header = ttk.Label(
+        self.right_header = ttk.Label(
             main_frame,
-            text=str(self.file2_path),
+            text=str(self.file2_path) if self.file2_path else "No file selected",
             font=('Courier', 10, 'bold'),
             background='#E3F2FD',
             padding=5
         )
-        right_header.grid(row=0, column=1, sticky=(tk.W, tk.E), padx=(5, 0), pady=(0, 5))
+        self.right_header.grid(row=1, column=1, sticky=(tk.W, tk.E), padx=(5, 0), pady=(0, 5))
 
         # Text widgets for file content
         self.left_text = tk.Text(
@@ -74,7 +105,7 @@ class FileDiffGUI:
             width=60,
             height=30
         )
-        self.left_text.grid(row=1, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 5))
+        self.left_text.grid(row=2, column=0, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(0, 5))
 
         self.right_text = tk.Text(
             main_frame,
@@ -83,15 +114,15 @@ class FileDiffGUI:
             width=60,
             height=30
         )
-        self.right_text.grid(row=1, column=1, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(5, 0))
+        self.right_text.grid(row=2, column=1, sticky=(tk.W, tk.E, tk.N, tk.S), padx=(5, 0))
 
         # Scrollbars
         left_scroll = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.left_text.yview)
-        left_scroll.grid(row=1, column=0, sticky=(tk.E, tk.N, tk.S), padx=(0, 5))
+        left_scroll.grid(row=2, column=0, sticky=(tk.E, tk.N, tk.S), padx=(0, 5))
         self.left_text.configure(yscrollcommand=left_scroll.set)
 
         right_scroll = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.right_text.yview)
-        right_scroll.grid(row=1, column=1, sticky=(tk.E, tk.N, tk.S), padx=(5, 0))
+        right_scroll.grid(row=2, column=1, sticky=(tk.E, tk.N, tk.S), padx=(5, 0))
         self.right_text.configure(yscrollcommand=right_scroll.set)
 
         # Synchronize scrolling
@@ -100,7 +131,7 @@ class FileDiffGUI:
 
         # Legend
         legend_frame = ttk.Frame(main_frame, padding="5")
-        legend_frame.grid(row=2, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
+        legend_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
 
         legend_items = [
             ("Identical", self.colors['equal']),
@@ -120,6 +151,54 @@ class FileDiffGUI:
         for tag, color in self.colors.items():
             self.left_text.tag_configure(tag, background=color)
             self.right_text.tag_configure(tag, background=color)
+
+    def browse_file1(self) -> None:
+        """Open file dialog to select first file."""
+        filename = filedialog.askopenfilename(
+            title="Select First File",
+            filetypes=[("Text files", "*.txt"), ("Python files", "*.py"), ("All files", "*.*")]
+        )
+        if filename:
+            self.file1_entry.delete(0, tk.END)
+            self.file1_entry.insert(0, filename)
+            self.file1_path = Path(filename)
+
+    def browse_file2(self) -> None:
+        """Open file dialog to select second file."""
+        filename = filedialog.askopenfilename(
+            title="Select Second File",
+            filetypes=[("Text files", "*.txt"), ("Python files", "*.py"), ("All files", "*.*")]
+        )
+        if filename:
+            self.file2_entry.delete(0, tk.END)
+            self.file2_entry.insert(0, filename)
+            self.file2_path = Path(filename)
+
+    def compare_files(self) -> None:
+        """Trigger file comparison."""
+        # Get file paths from entry widgets
+        file1_str = self.file1_entry.get().strip()
+        file2_str = self.file2_entry.get().strip()
+
+        if not file1_str or not file2_str:
+            messagebox.showwarning("Missing Files", "Please select both files to compare.")
+            return
+
+        self.file1_path = Path(file1_str)
+        self.file2_path = Path(file2_str)
+
+        # Update headers
+        self.left_header.config(text=str(self.file1_path))
+        self.right_header.config(text=str(self.file2_path))
+
+        # Clear previous content
+        self.left_text.config(state=tk.NORMAL)
+        self.right_text.config(state=tk.NORMAL)
+        self.left_text.delete(1.0, tk.END)
+        self.right_text.delete(1.0, tk.END)
+
+        # Perform comparison
+        self.display_diff()
 
     def _on_scroll(self, scrollbar1: ttk.Scrollbar, scrollbar2: ttk.Scrollbar, *args) -> None:
         """Synchronize scrolling between two text widgets."""
@@ -252,7 +331,12 @@ class FileDiffGUI:
         Returns:
             Exit code (0 = identical, 1 = different, 2 = error)
         """
-        result = self.display_diff()
+        # If files were provided, compare them automatically
+        if self.file1_path and self.file2_path:
+            result = self.display_diff()
+        else:
+            result = 0  # Default for no comparison yet
+
         self.root.mainloop()
         return result
 
@@ -407,28 +491,53 @@ def main() -> int:
     Returns:
         Exit code (0 = identical, 1 = different, 2 = error)
     """
-    if len(sys.argv) < 3:
-        print("Usage: python MyFileDiff.py <file1> <file2> [--cli]", file=sys.stderr)
-        print("\nCompares two files and displays differences side-by-side")
-        print("Options:")
-        print("  --cli    Use command-line interface instead of GUI (default: GUI)")
-        return 2
-
-    file1 = sys.argv[1]
-    file2 = sys.argv[2]
+    # Check for CLI flag
     use_cli = '--cli' in sys.argv
 
-    if use_cli:
-        viewer = FileDiffViewer(file1, file2)
-        return viewer.display_diff()
-    else:
-        try:
-            gui = FileDiffGUI(file1, file2)
-            return gui.run()
-        except tk.TclError as e:
-            print(f"GUI Error: {e}", file=sys.stderr)
-            print("Try using --cli flag for command-line mode", file=sys.stderr)
+    # Remove --cli from args if present
+    args = [arg for arg in sys.argv[1:] if arg != '--cli']
+
+    # Handle different argument scenarios
+    if len(args) == 0:
+        # No files provided - open GUI with blank view
+        if use_cli:
+            print("Usage: python MyFileDiff.py <file1> <file2> [--cli]", file=sys.stderr)
+            print("\nCompares two files and displays differences side-by-side")
+            print("Options:")
+            print("  --cli    Use command-line interface instead of GUI (default: GUI)")
             return 2
+        else:
+            try:
+                gui = FileDiffGUI()
+                return gui.run()
+            except tk.TclError as e:
+                print(f"GUI Error: {e}", file=sys.stderr)
+                return 2
+
+    elif len(args) == 2:
+        # Two files provided
+        file1, file2 = args[0], args[1]
+
+        if use_cli:
+            viewer = FileDiffViewer(file1, file2)
+            return viewer.display_diff()
+        else:
+            try:
+                gui = FileDiffGUI(file1, file2)
+                return gui.run()
+            except tk.TclError as e:
+                print(f"GUI Error: {e}", file=sys.stderr)
+                print("Try using --cli flag for command-line mode", file=sys.stderr)
+                return 2
+    else:
+        # Invalid number of arguments
+        print("Usage: python MyFileDiff.py [<file1> <file2>] [--cli]", file=sys.stderr)
+        print("\nCompares two files and displays differences side-by-side")
+        print("Options:")
+        print("  No arguments: Opens GUI with file selection")
+        print("  <file1> <file2>: Compare specified files")
+        print("  --cli: Use command-line interface instead of GUI (requires file arguments)")
+        return 2
 
 
 if __name__ == "__main__":

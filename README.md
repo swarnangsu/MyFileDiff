@@ -9,6 +9,7 @@ A powerful and intuitive file comparison tool that displays side-by-side differe
 ## Features
 
 - **🎨 Color-Coded GUI** - Beautiful graphical interface with intuitive color highlighting
+- **📁 Interactive File Selection** - Browse and select files directly from the GUI
 - **💻 CLI Mode** - Traditional command-line interface for terminal enthusiasts
 - **🔄 Synchronized Scrolling** - Both file panes scroll together for easy comparison
 - **📊 Visual Legend** - Clear indication of what each color represents

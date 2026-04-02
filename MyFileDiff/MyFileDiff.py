@@ -129,9 +129,20 @@ class FileDiffGUI:
         self.left_text.configure(yscrollcommand=lambda *args: self._on_scroll(left_scroll, right_scroll, *args))
         self.right_text.configure(yscrollcommand=lambda *args: self._on_scroll(right_scroll, left_scroll, *args))
 
+        # Horizontal scrollbars
+        left_hscroll = ttk.Scrollbar(main_frame, orient=tk.HORIZONTAL, command=self.left_text.xview)
+        left_hscroll.grid(row=3, column=0, sticky=(tk.W, tk.E), padx=(0, 5))
+
+        right_hscroll = ttk.Scrollbar(main_frame, orient=tk.HORIZONTAL, command=self.right_text.xview)
+        right_hscroll.grid(row=3, column=1, sticky=(tk.W, tk.E), padx=(5, 0))
+
+        # Synchronize horizontal scrolling
+        self.left_text.configure(xscrollcommand=lambda *args: self._on_hscroll(left_hscroll, right_hscroll, *args))
+        self.right_text.configure(xscrollcommand=lambda *args: self._on_hscroll(right_hscroll, left_hscroll, *args))
+
         # Legend
         legend_frame = ttk.Frame(main_frame, padding="5")
-        legend_frame.grid(row=3, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
+        legend_frame.grid(row=4, column=0, columnspan=2, sticky=(tk.W, tk.E), pady=(10, 0))
 
         legend_items = [
             ("Identical", self.colors['equal']),
@@ -205,6 +216,12 @@ class FileDiffGUI:
         scrollbar1.set(*args)
         self.left_text.yview_moveto(args[0])
         self.right_text.yview_moveto(args[0])
+
+    def _on_hscroll(self, scrollbar1: ttk.Scrollbar, scrollbar2: ttk.Scrollbar, *args) -> None:
+        """Synchronize horizontal scrolling between two text widgets."""
+        scrollbar1.set(*args)
+        self.left_text.xview_moveto(args[0])
+        self.right_text.xview_moveto(args[0])
 
     def read_file(self, file_path: Path) -> List[str]:
         """Read file and return lines.
